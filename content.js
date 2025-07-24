@@ -1,63 +1,81 @@
 (function() {
-  const CHECK_INTERVAL_MS = 2000; 
-  const INACTIVITY_ALERT_MS = 15 * 60 * 1000; 
+  const CHECK_INTERVAL_MS = 2000;
+  const INACTIVITY_ALERT_MS = 15 * 60 * 1000;
+  const INACTIVITY_START_LOG_DELAY_MS = 10 * 1000;
 
-  let lastActivityTime = Date.now(); 
-  let promptAppearTime = 0;       
-  let promptDetected = false;      
-  let inactivityTimer = null;       
+  let lastActivityTime = Date.now();
+  let promptAppearTime = 0;
+  let promptDetected = false;
 
-  // --- Helper for consistent logging ---
+  let inactivityTimer = null;
+  let activityMonitorTimer = null;
+  let isInactive = false;
+
   function log(message, ...args) {
     console.log("YouTube NonStop Watcher:", message, ...args);
   }
 
-  // --- Function to start/reset the inactivity timer ---
-  function startInactivityTimer() {
-    clearTimeout(inactivityTimer); // Clear any existing timer
+  function startInactivityAlertTimer() {
+    clearTimeout(inactivityTimer);
     inactivityTimer = setTimeout(() => {
       const now = Date.now();
-      const actualInactivityDurationMs = now - lastActivityTime;
-      const actualInactivityDurationMinutes = (actualInactivityDurationMs / (60 * 1000)).toFixed(1);
+      const actualInactivityDurationMinutes = ((now - lastActivityTime) / (60 * 1000)).toFixed(1);
       
       log(`User unresponsive for ~15 minutes. Actual inactivity: ${actualInactivityDurationMinutes} minutes.`);
-      log(`Last recorded activity at: ${new Date(lastActivityTime).toLocaleTimeString()}`);
-      
-
+      log(`Last recorded activity at: ${new Date(lastActivityTime).toLocaleTimeString()} (${lastActivityTime})`);
     }, INACTIVITY_ALERT_MS);
   }
 
-  // --- Functions to update lastActivityTime and reset inactivity timer ---
-  function updateLastActivity() {
-    const previousActivityTime = lastActivityTime;
-    lastActivityTime = Date.now();
-    startInactivityTimer(); // Reset the 15-minute timer on every activity
+  function resetActivityMonitor() {
+    clearTimeout(activityMonitorTimer);
 
+    if (isInactive) {
+      const now = Date.now();
+      const durationOfInactivityMs = now - lastActivityTime;
+      const durationOfInactivitySeconds = (durationOfInactivityMs / 1000).toFixed(1);
 
+      log(`User activity resumed at: ${new Date(now).toLocaleTimeString()} (${now})`);
+      log(`Duration of inactivity: ${durationOfInactivitySeconds} seconds`);
+      isInactive = false;
+    }
+
+    activityMonitorTimer = setTimeout(() => {
+      if (!isInactive) {
+        const now = Date.now();
+        log(`Inactivity started at: ${new Date(now).toLocaleTimeString()} (${now}) (no activity for ${INACTIVITY_START_LOG_DELAY_MS / 1000} seconds)`);
+        isInactive = true;
+      }
+    }, INACTIVITY_START_LOG_DELAY_MS);
   }
 
-  // Add event listeners for mouse and keyboard activity
+  function updateLastActivity() {
+    lastActivityTime = Date.now();
+    
+    startInactivityAlertTimer();
+    
+    resetActivityMonitor();
+  }
+
   document.addEventListener('mousemove', updateLastActivity);
   document.addEventListener('keydown', updateLastActivity);
   document.addEventListener('scroll', updateLastActivity);
+  document.addEventListener('mousedown', updateLastActivity);
 
-  // Initialize the inactivity timer when the script loads
-  startInactivityTimer();
+  startInactivityAlertTimer();
+  resetActivityMonitor();
 
-  // --- Main function to click 'Continue watching' ---
   function clickContinueWatching() {
     const confirmationDialog = document.querySelector('yt-confirm-dialog-renderer'); 
     
     if (confirmationDialog && confirmationDialog.offsetWidth > 0 && confirmationDialog.offsetHeight > 0) {
-      // Prompt is visible
       if (!promptDetected) {
         promptAppearTime = Date.now();
-        promptDetected = true; // Set flag to true so we only log this once per prompt appearance
+        promptDetected = true;
         const inactivityDurationMs = promptAppearTime - lastActivityTime;
         const inactivityDurationSeconds = (inactivityDurationMs / 1000).toFixed(1);
 
         log(`--- PROMPT DETECTED ---`);
-        log(`Last User Activity: ${new Date(lastActivityTime).toLocaleTimeString()} (${lastActivityTime})`);
+        log(`Last User Activity Before Prompt Trigger: ${new Date(lastActivityTime).toLocaleTimeString()} (${lastActivityTime})`);
         log(`Prompt Appeared Time: ${new Date(promptAppearTime).toLocaleTimeString()} (${promptAppearTime})`);
         log(`Inactivity Duration Before Prompt: ${inactivityDurationSeconds} seconds`);
       }
@@ -89,8 +107,8 @@
         
         promptDetected = false; 
         promptAppearTime = 0;
-    
-        startInactivityTimer(); 
+        
+        updateLastActivity(); 
 
         return true;
       }
@@ -107,6 +125,6 @@
   setInterval(clickContinueWatching, CHECK_INTERVAL_MS);
 
   log("Extension loaded and monitoring for 'Are you still watching?' prompt.");
-  log(`Initial Last User Activity: ${new Date(lastActivityTime).toLocaleTimeString()} (based on script load)`);
+  log(`Initial Last User Activity (script load): ${new Date(lastActivityTime).toLocaleTimeString()} (${lastActivityTime})`);
 
 })();
