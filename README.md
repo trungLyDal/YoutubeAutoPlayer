@@ -1,8 +1,6 @@
-You got it! A good README.md file is essential for any GitHub repository. It's the first thing people see and tells them what your project is, how it works, and how to use it.
-
-Here's a comprehensive README.md for your "YouTube NonStop Watcher" extension, formatted in Markdown so you can directly copy and paste it into a file named README.md in the root of your project folder.
-
 YouTube NonStop Watcher
+## Download Links:
+- https://addons.mozilla.org/en-US/firefox/addon/youtube-nonstop-watcher/
  ## 📺 Overview
 
 The YouTube NonStop Watcher is a lightweight and efficient browser extension designed to automatically dismiss the "Are you still watching?" prompt that appears on YouTube after periods of inactivity. This ensures an uninterrupted and seamless viewing experience, perfect for long videos, extended playlists, background music, or when you simply don't want to be bothered by the prompt.
@@ -39,7 +37,7 @@ To get started, clone or download this repository to your local machine:
 
 Bash
 
-git clone https://github.com/YOUR_USERNAME/youtube-nonstop-watcher.git
+git clone https://github.com/trungLyDal/YoutubeAutoPlayer.git
 # If you don't use Git, you can download the ZIP from GitHub and extract it.
 Ensure your project folder structure looks exactly like this:
 
