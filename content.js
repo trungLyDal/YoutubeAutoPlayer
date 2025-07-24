@@ -3,7 +3,8 @@
   const INACTIVITY_ALERT_MS = 15 * 60 * 1000;
   const INACTIVITY_START_LOG_DELAY_MS = 10 * 1000;
 
-  let lastActivityTime = Date.now();
+  let lastActivityTime = Date.now(); // This will now track the actual last interaction
+  let inactivityStartTime = Date.now(); // NEW: This will track when inactivity *officially* started
   let promptAppearTime = 0;
   let promptDetected = false;
 
@@ -19,10 +20,10 @@
     clearTimeout(inactivityTimer);
     inactivityTimer = setTimeout(() => {
       const now = Date.now();
-      const actualInactivityDurationMinutes = ((now - lastActivityTime) / (60 * 1000)).toFixed(1);
+      const actualInactivityDurationMinutes = ((now - inactivityStartTime) / (60 * 1000)).toFixed(1); // Use inactivityStartTime here
       
       log(`User unresponsive for ~15 minutes. Actual inactivity: ${actualInactivityDurationMinutes} minutes.`);
-      log(`Last recorded activity at: ${new Date(lastActivityTime).toLocaleTimeString()} (${lastActivityTime})`);
+      log(`Last recorded activity at: ${new Date(inactivityStartTime).toLocaleTimeString()} (${inactivityStartTime})`); // Use inactivityStartTime here for the "at" log
     }, INACTIVITY_ALERT_MS);
   }
 
@@ -31,7 +32,7 @@
 
     if (isInactive) {
       const now = Date.now();
-      const durationOfInactivityMs = now - lastActivityTime;
+      const durationOfInactivityMs = now - inactivityStartTime; // CORRECTED: Use inactivityStartTime
       const durationOfInactivitySeconds = (durationOfInactivityMs / 1000).toFixed(1);
 
       log(`User activity resumed at: ${new Date(now).toLocaleTimeString()} (${now})`);
@@ -42,6 +43,7 @@
     activityMonitorTimer = setTimeout(() => {
       if (!isInactive) {
         const now = Date.now();
+        inactivityStartTime = now; // NEW: Mark the official start of inactivity
         log(`Inactivity started at: ${new Date(now).toLocaleTimeString()} (${now}) (no activity for ${INACTIVITY_START_LOG_DELAY_MS / 1000} seconds)`);
         isInactive = true;
       }
@@ -49,7 +51,7 @@
   }
 
   function updateLastActivity() {
-    lastActivityTime = Date.now();
+    lastActivityTime = Date.now(); // This still tracks the very last interaction for prompt calculation
     
     startInactivityAlertTimer();
     
@@ -71,7 +73,7 @@
       if (!promptDetected) {
         promptAppearTime = Date.now();
         promptDetected = true;
-        const inactivityDurationMs = promptAppearTime - lastActivityTime;
+        const inactivityDurationMs = promptAppearTime - lastActivityTime; // Still use lastActivityTime for prompt calc
         const inactivityDurationSeconds = (inactivityDurationMs / 1000).toFixed(1);
 
         log(`--- PROMPT DETECTED ---`);
@@ -108,6 +110,7 @@
         promptDetected = false; 
         promptAppearTime = 0;
         
+        // After an automated click, treat it as activity to reset inactivity state and timers
         updateLastActivity(); 
 
         return true;
