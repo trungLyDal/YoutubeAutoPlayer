@@ -39,7 +39,7 @@ To get started, clone or download this repository to your local machine:
 
 Bash
 
-git clone https://github.com/YOUR_USERNAME/youtube-nonstop-watcher.git
+git clone https://github.com/trungLyDal/YoutubeAutoPlayer.git
 # If you don't use Git, you can download the ZIP from GitHub and extract it.
 Ensure your project folder structure looks exactly like this:
 
